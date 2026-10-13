@@ -1,0 +1,4 @@
+FROM postgres:12
+
+RUN apt update -y && apt upgrade -y
+RUN apt install -y postgresql-12-pgmemcache
