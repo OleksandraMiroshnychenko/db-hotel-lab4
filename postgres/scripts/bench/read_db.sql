@@ -1,0 +1,1 @@
+SELECT availability_json();

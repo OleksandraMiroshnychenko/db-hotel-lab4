@@ -1,0 +1,72 @@
+version: '3.8'
+
+# this docker file is based on this tutorial:
+# https://www.dabbleofdevops.com/blog/setup-a-postgres-python-docker-dev-stack
+
+services:
+
+  memcached:
+    image: memcached:latest
+    ports:
+      - 11212:11211
+
+      
+  postgres_db:
+  
+    build:
+      context: .
+      dockerfile: pg-Dockerfile
+      
+    command: postgres -c pgmemcache.default_servers=memcached
+      
+    environment:   # Set up postgres database name and password
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: root
+      
+    ports:    # Set up ports exposed for other containers to connect to
+      - 8432:5432
+      
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+      # усі файли з цієї папки виконуються при першому старті бази в алфавітному порядку
+      - ./postgres/init:/docker-entrypoint-initdb.d
+      - ./postgres/scripts:/pg
+      
+    depends_on:
+      - memcached
+
+
+  #python_app:
+  #
+  #  build:
+  #    context: .
+  #    dockerfile: Dockerfile
+  #    
+  #  depends_on:
+  #    - postgres_db
+  #    
+  #  command:
+  #    tail -f /dev/null
+
+      
+  adminer:
+    image: adminer
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres_db
+    depends_on:
+      - postgres_db
+
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: nginx-Dockerfile
+    ports:
+      - 8088:80
+    volumes:
+      - ./nginx/logs:/etc/logs/nginx
+    depends_on:
+      - postgres_db
+
